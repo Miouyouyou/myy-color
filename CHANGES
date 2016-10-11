@@ -1,0 +1,29 @@
+
+Version 0.0.1
+-------------
+
+* Added a CHANGELOG
+
+* Renamed color to myy-color
+
+* Cleaned up myy_bmp2raw
+
+* Added two modules to myy-color
+ * BMP which handles the decoding of BMP files
+ * GL which handles the encoding of raw textures for OpenGL
+
+* Added a few tests that currently only test the decoding procedures.
+
+* Added a README which documents :
+ * The current goals of the project
+ * How to use the library
+ * How to use myy_bmp2raw
+ * What currently needs to be done. 
+ However a TODO file might be needed.
+
+* Created the gemspec file that handles the generation of the gem.
+  Build the gem like this :
+  `$ gem build myy-color.gemspec`
+
+* Modified the .gitignore file so that backup files, gem files and
+  test textures are not added in the Git tree.

@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
     format.
   desc
   s.rubyforge_project = "myy-color"
-  s.files = Dir['LICENSE', 'README', 'myy-color.gemspec', 'lib/**', 'bin/myy_bmp2raw']
+  s.files = Dir['LICENSE', 'README', 'CHANGES', 'myy-color.gemspec', 'lib/**', 'bin/myy_bmp2raw']
   s.executables = %w(myy_bmp2raw)
   s.license = 'MIT'
 end
