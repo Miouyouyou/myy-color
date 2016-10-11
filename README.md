@@ -79,6 +79,15 @@ Usage
 
 `myy_bmp2raw file.bmp argb8888 converted.raw rgba4444`
 
+This add the following header to the Raw image :
+
+Offset | Use
+-------|----
+0x0 | Width
+0x4 | Height
+0x8 | glTexImage2D format
+0xc | glTexImage2D type
+
 Here follows some sample code that can be used to load such library.
 **TODO : Provide this example as a C file, directly in the source tree.**
 **TODO : Provide a binary that generate a ready to compile minimalist
@@ -145,4 +154,7 @@ Tipping
 -------
 
 [Pledgie](https://pledgie.com/campaigns/32702)
+
 BTC : 16zwQUkG29D49G6C7pzch18HjfJqMXFNrW
+
+[![Tip with Altcoins](https://shapeshift.io/images/shifty/small_light_altcoins.png)](https://shapeshift.io/shifty.html?destination=16zwQUkG29D49G6C7pzch18HjfJqMXFNrW&output=BTC)
