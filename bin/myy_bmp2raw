@@ -1,17 +1,5 @@
 #!/usr/bin/env ruby
-require "color"
-
-GL_UNSIGNED_BYTE = 0x1401
-GL_RGBA = 0x1908
-GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034
-GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033
-
-formats = {
-  rgba5551: {headers: [GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1], unpack: "S<*", pack: "S<*"},
-  rgba4444: {headers: [GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4], unpack: "S<*", pack: "S<*"},
-  rgba8888: {headers: [GL_RGBA, GL_UNSIGNED_BYTE], unpack: "I<*", pack: "I>*"},
-  argb8888: {headers: [GL_RGBA, GL_UNSIGNED_BYTE], unpack: "I<*", pack: "I>*"}
-}
+require "myy-color"
 
 if ARGV.length < 4
   puts "convert bmp_file input_color_encoding raw_file output_color_encoding"
@@ -20,125 +8,11 @@ if ARGV.length < 4
 end
 
 bmp_file, input_color_encoding, raw_file, output_color_encoding, = ARGV
-input_color_encoding  = input_color_encoding.to_sym
-output_color_encoding = output_color_encoding.to_sym
 
-infile = File.open(bmp_file, "r")
-infile.seek(0x12)
-width, height = infile.read(8).unpack("I<2")
-puts "[Read] width : #{width} -- height : #{height}"
-infile.seek(0x8a)
-input_pixels = infile.read.unpack(formats[input_color_encoding][:unpack])
-infile.close
+MyyColor::OpenGL.convert_bmp(bmp_filename: bmp_file,
+                             raw_filename: raw_file,
+                             from: input_color_encoding,
+                             to: output_color_encoding)
 
-encoded_pixels = input_pixels.map do |pixel|
-  Color.encode(Color.decode(pixel, encoding: input_color_encoding),
-               encoding: output_color_encoding)
-end
+puts "Raw converted."
 
-#if formats[output_color_encoding][:pack][0] == "S" && width.odd?
-#  (width..encoded_pixels.length).step(width) {|i|
-#    puts "Inserting pixel"
-#    encoded_pixels.insert(i, 0)
-#  }
-#end
-
-# Upside down... Useful for BMP ?
-puts "Encoded pixels : %d - By width : %d" % [encoded_pixels.length, encoded_pixels.length/width]
-new_pixels = encoded_pixels.flatten
-
-current_output_format = formats[output_color_encoding]
-
-metadata = [width, height] + current_output_format[:headers]
-
-File.open(raw_file, "w") do |out|
-  out.write(metadata.pack("I<*"))
-  out.write(new_pixels.pack(current_output_format[:pack])) # TODO : Autoguess of pixels pack format
-end
-
-def to_valid_C_name(string)
-  string.strip.gsub(/\s+/, "_").upcase
-end
-
-raw_basename = raw_file[0...raw_file.rindex(".")]
-raw_metadata_file = "#{raw_basename}.metadata"
-if File.exists?(raw_metadata_file)
-  require 'json'
-  metadata = JSON.parse(File.read(raw_metadata_file)).to_h
-  constant_names = ["texture", raw_basename]
-  constants = {}
-
-  constants_from_hash = ->(key, value) {
-    case(value)
-    when Hash
-      constant_names.push(key)
-      value.each(&constants_from_hash)
-      constant_names.pop
-    else
-      constants[to_valid_C_name("#{constant_names.join("_")}_#{key}")] = value
-    end
-  }
-
-  metadata.each(&constants_from_hash)
-  c_header_content = ""
-  constants.each {|k,v|
-    c_header_content << "#define #{k} #{v}\n"
-  }
-  File.write("#{raw_basename}.h", c_header_content)
-end
-
-rawfile_full_path = File.absolute_path(raw_file)
-puts <<EOF
-Raw converted.
-To load the texture with C and OpenGL, adapt the following code :
-  #include <fcntl.h> // open
-  #include <stdio.h> // fprintf
-  #include <stdlib.h> // free
-  #include <string.h> // malloc
-  #include <unistd.h> // close
-  #include <sys/types.h> // read
-  #include <sys/stat.h> // stat
-
-  ...
-
-  int n_textures = 1;
-  int textures_id_array[n_textures];
-  int current_tex = 0;
-  char *buffer = malloc(#{File.size(rawfile_full_path)+1});
-  struct stat fstat_results;
-  glGenTextures(n_textures, textures_id_array);
-  int fd = open("#{rawfile_full_path}", O_RDONLY);
-  if (buffer && fd != 1) {
-    fstat(fd, &fstat_results);
-    unsigned int width, height, gl_format, gl_type, bytes_read;
-    read(fd, &width, 4);
-    read(fd, &height, 4);
-    read(fd, &gl_format, 4);
-    read(fd, &gl_type, 4);
-    bytes_read = read(fd, buffer, fstat_results.st_size);
-    fprintf(stderr, "Texture : %s, Width : %u, Height : %u,\\n"
-                    "Format : %x, Type : %x\\n"
-                    "Read : %d bytes\\n",
-                    "#{rawfile_full_path}",
-                    width, height, gl_format, gl_type, bytes_read);
-    close(fd);
-    glBindTexture(GL_TEXTURE_2D, textures_id_array[current_tex]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, gl_format, gl_type, buffer);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    free(buffer);
-  }
-  else {
-    if (fd == -1)
-      fprintf(stderr, "Could not open file %s (Not found ?)\\n",
-              "#{rawfile_full_path}");
-    else close(fd);
-    if (buffer == NULL)
-      fprintf(stderr, "Malloc failed to allocated %zd bytes\\n",
-              #{File.size(rawfile_full_path)+1});
-    else free(buffer);
-  }
-EOF
