@@ -1,3 +1,4 @@
+
 Goal
 ----
 
@@ -9,10 +10,10 @@ The current goals of this gem is :
   file formats, like BMP, PNG and JPEG. Currently, only
   uncompressed BMP is supported.
 
-TODO : Manage the extraction of :
-[ ] Compressed BMP color components
-[ ] PNG color components
-[ ] JPEG color components
+**TODO - Manage the extraction of :**
+- [ ] Compressed BMP color components
+- [ ] PNG color components
+- [ ] JPEG color components
 
 The provided binary convert uncompressed BMP content to raw formats with
 different encodings, with a special header that can be used by OpenGL
@@ -21,7 +22,7 @@ programs to load the texture directly.
 Library Usage
 -------------
 
-'''ruby
+```ruby
 require 'myy-color'
 
 # Encoding / Decoding
@@ -60,17 +61,18 @@ MyyColor::BMP.convert_bmp(bmp_filename: "test.bmp",
                           from: :argb8888,
                           to: :rgba5551)
 # Generate a test.raw file
-'''
+```
 
-TODO : Currently, all colors components are implicitly represented by
-       normalised values in the range [0,255].
-       This is not very terribly flexible. One improvement would be
-       to :
-       - represent the colors with data structures containing all
-         the necessary informations (currently encoded value,
-         max possible value in the encoding it comes from, ...)
-       - rewrite all the encoding procedures around the use of these
-         data structures instead.
+**TODO : Currently, all colors components are implicitly represented by
+  normalised values in the range [0,255].
+  This is not very terribly flexible.** 
+  
+One improvement would be to :
+- represent the colors with data structures containing all
+  the necessary informations (currently encoded value,
+  max possible value in the encoding it comes from, ...)
+- rewrite all the encoding procedures around the use of these
+  data structures instead.
 
 Usage
 -----
@@ -78,11 +80,11 @@ Usage
 `myy_bmp2raw file.bmp argb8888 converted.raw rgba4444`
 
 Here follows some sample code that can be used to load such library.
-TODO : Provide this example as a C file, directly in the source tree.
-TODO : Provide a binary that generate a ready to compile minimalist
-       OpenGL/EGL example that loads such raw file as a texture.
+**TODO : Provide this example as a C file, directly in the source tree.**
+**TODO : Provide a binary that generate a ready to compile minimalist
+  OpenGL/EGL example that loads such raw file as a texture.**
 
-'''c
+```c
   #include <fcntl.h> // open
   #include <stdio.h> // fprintf
   #include <stdlib.h> // free, abort
@@ -137,7 +139,7 @@ TODO : Provide a binary that generate a ready to compile minimalist
              tex_filename);
      abort();
   }
-'''
+```
 
 Tipping
 -------
